@@ -61,7 +61,8 @@ def run():
     if args.dir:
         for filename in sorted(os.listdir(args.dir)):
             files.append(os.path.join(args.dir, filename))
-    files.append(args.file)
+    if args.file:
+        files.append(args.file)
     for file in files:
         img = cv2.imread(file)
         for line in reader.readtext(file, detail=args.detail):
