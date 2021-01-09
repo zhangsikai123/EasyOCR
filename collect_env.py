@@ -1,14 +1,15 @@
 # This script outputs relevant system environment info
 # Run it with `python collect_env.py`.
 import locale
+import os
 import re
 import subprocess
 import sys
-import os
 from collections import namedtuple
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except (ImportError, NameError, AttributeError, OSError):
     TORCH_AVAILABLE = False
@@ -90,6 +91,7 @@ def get_conda_packages(run_lambda):
 def get_gcc_version(run_lambda):
     return run_and_parse_first_match(run_lambda, 'gcc --version', r'gcc (.*)')
 
+
 def get_clang_version(run_lambda):
     return run_and_parse_first_match(run_lambda, 'clang --version', r'clang version (.*)')
 
@@ -108,12 +110,13 @@ def get_nvidia_driver_version(run_lambda):
 
 
 def get_gpu_info(run_lambda):
-    if get_platform() == 'darwin' or (TORCH_AVAILABLE and hasattr(torch.version, 'hip') and torch.version.hip is not None):
+    if get_platform() == 'darwin' or (
+            TORCH_AVAILABLE and hasattr(torch.version, 'hip') and torch.version.hip is not None):
         if TORCH_AVAILABLE and torch.cuda.is_available():
             return torch.cuda.get_device_name(None)
         return None
     smi = get_nvidia_smi()
-    uuid_regex = re.compile(r' \(UUID: .+?\)')
+    uuid_regex = re.compile(r'(UUID: .+?\\)')
     rc, out, _ = run_lambda(smi + ' -L')
     if rc != 0:
         return None
@@ -244,6 +247,7 @@ def get_os(run_lambda):
 def get_pip_packages(run_lambda):
     """Returns `pip list` output. Note: will also find conda-installed pytorch
     and numpy packages."""
+
     # People generally have `pip` as `pip` or `pip3`
     def run_with_pip(pip):
         if get_platform() == 'win32':
@@ -296,7 +300,8 @@ def get_env_info():
     return SystemEnv(
         torch_version=version_str,
         is_debug_build=debug_mode_str,
-        python_version='{}.{} ({}-bit runtime)'.format(sys.version_info[0], sys.version_info[1], sys.maxsize.bit_length() + 1),
+        python_version='{}.{} ({}-bit runtime)'.format(sys.version_info[0], sys.version_info[1],
+                                                       sys.maxsize.bit_length() + 1),
         is_cuda_available=cuda_available_str,
         cuda_compiled_version=cuda_version_str,
         cuda_runtime_version=get_running_cuda_version(run_lambda),
@@ -314,6 +319,7 @@ def get_env_info():
         clang_version=get_clang_version(run_lambda),
         cmake_version=get_cmake_version(run_lambda),
     )
+
 
 env_info_fmt = """
 PyTorch version: {torch_version}
@@ -368,7 +374,7 @@ def pretty_str(envinfo):
         return text
 
     def maybe_start_on_next_line(string):
-        # If `string` is multiline, prepend a \n to it.
+        # If `string` is multiline, prepend an to it.
         if string is not None and len(string.split('\n')) > 1:
             return '\n{}\n'.format(string)
         return string
@@ -376,8 +382,7 @@ def pretty_str(envinfo):
     mutable_dict = envinfo._asdict()
 
     # If nvidia_gpu_models is multiline, start on the next line
-    mutable_dict['nvidia_gpu_models'] = \
-        maybe_start_on_next_line(envinfo.nvidia_gpu_models)
+    mutable_dict['nvidia_gpu_models'] = maybe_start_on_next_line(envinfo.nvidia_gpu_models)
 
     # If the machine doesn't have CUDA, report some fields as 'No CUDA'
     dynamic_cuda_fields = [

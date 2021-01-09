@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 import sys
 from logging import getLogger
 
@@ -13,9 +12,8 @@ from bidi.algorithm import get_display
 from .config import *
 from .detection import get_detector, get_textbox
 from .recognition import get_recognizer, get_text
-from .utils import group_text_box, get_image_list, calculate_md5, get_paragraph, \
-    download_and_unzip, diff, reformat_input, \
-    make_rotated_img_list, set_result_with_confidence
+from .utils import group_text_box, get_image_list, calculate_md5, get_paragraph, download_and_unzip, diff, \
+    reformat_input, make_rotated_img_list, set_result_with_confidence
 
 if sys.version_info[0] == 2:
     from io import open
@@ -249,8 +247,8 @@ class Reader(object):
                 }
             else:
                 network_params = recog_config['network_params']
-            self.recognizer, self.converter = get_recognizer(recog_network, network_params, \
-                                                             self.character, separator_list, \
+            self.recognizer, self.converter = get_recognizer(recog_network, network_params,
+                                                             self.character, separator_list,
                                                              dict_list, model_path, device=self.device)
 
     def setModelLanguage(self, language, lang_list, list_lang, list_lang_string):
@@ -268,20 +266,20 @@ class Reader(object):
             char = ''.join(list)
         return char
 
-    def detect(self, img, min_size=20, text_threshold=0.7, low_text=0.4, \
-               link_threshold=0.4, canvas_size=2560, mag_ratio=1., \
-               slope_ths=0.1, ycenter_ths=0.5, height_ths=0.5, \
+    def detect(self, img, min_size=20, text_threshold=0.7, low_text=0.4,
+               link_threshold=0.4, canvas_size=2560, mag_ratio=1.,
+               slope_ths=0.1, ycenter_ths=0.5, height_ths=0.5,
                width_ths=0.5, add_margin=0.1, reformat=True, optimal_num_chars=None):
 
         if reformat:
             img, img_cv_grey = reformat_input(img)
 
-        text_box = get_textbox(self.detector, img, canvas_size, mag_ratio, \
-                               text_threshold, link_threshold, low_text, \
+        text_box = get_textbox(self.detector, img, canvas_size, mag_ratio,
+                               text_threshold, link_threshold, low_text,
                                False, self.device, optimal_num_chars)
-        horizontal_list, free_list = group_text_box(text_box, slope_ths, \
-                                                    ycenter_ths, height_ths, \
-                                                    width_ths, add_margin, \
+        horizontal_list, free_list = group_text_box(text_box, slope_ths,
+                                                    ycenter_ths, height_ths,
+                                                    width_ths, add_margin,
                                                     (optimal_num_chars is None))
 
         if min_size:
@@ -290,12 +288,12 @@ class Reader(object):
 
         return horizontal_list, free_list
 
-    def recognize(self, img_cv_grey, horizontal_list=None, free_list=None, \
-                  decoder='greedy', beamWidth=5, batch_size=1, \
-                  workers=0, allowlist=None, blocklist=None, detail=1, \
-                  rotation_info=None, \
-                  paragraph=False, \
-                  contrast_ths=0.1, adjust_contrast=0.5, filter_ths=0.003, \
+    def recognize(self, img_cv_grey, horizontal_list=None, free_list=None,
+                  decoder='greedy', beamWidth=5, batch_size=1,
+                  workers=0, allowlist=None, blocklist=None, detail=1,
+                  rotation_info=None,
+                  paragraph=False,
+                  contrast_ths=0.1, adjust_contrast=0.5, filter_ths=0.003,
                   reformat=True):
 
         if reformat:
@@ -321,9 +319,10 @@ class Reader(object):
         if rotation_info:
             image_list = make_rotated_img_list(rotation_info, image_list)
 
-        if self.model_lang in ['chinese_tra', 'chinese_sim', 'japanese', 'korean']: decoder = 'greedy'
-        result = get_text(self.character, imgH, int(max_width), self.recognizer, self.converter, image_list, \
-                          ignore_char, decoder, beamWidth, batch_size, contrast_ths, adjust_contrast, filter_ths, \
+        if self.model_lang in ['chinese_tra', 'chinese_sim', 'japanese', 'korean']:
+            decoder = 'greedy'
+        result = get_text(self.character, imgH, int(max_width), self.recognizer, self.converter, image_list,
+                          ignore_char, decoder, beamWidth, batch_size, contrast_ths, adjust_contrast, filter_ths,
                           workers, self.device)
 
         if self.model_lang == 'arabic':
@@ -345,13 +344,13 @@ class Reader(object):
         else:
             return result
 
-    def readtext(self, image, decoder='greedy', beamWidth=5, batch_size=1, \
-                 workers=0, allowlist=None, blocklist=None, detail=1, \
-                 rotation_info=None, paragraph=False, min_size=20, \
-                 contrast_ths=0.1, adjust_contrast=0.5, filter_ths=0.003, \
-                 text_threshold=0.7, low_text=0.4, link_threshold=0.4, \
-                 canvas_size=2560, mag_ratio=1., \
-                 slope_ths=0.1, ycenter_ths=0.5, height_ths=0.5, \
+    def readtext(self, image, decoder='greedy', beamWidth=5, batch_size=1,
+                 workers=0, allowlist=None, blocklist=None, detail=1,
+                 rotation_info=None, paragraph=False, min_size=20,
+                 contrast_ths=0.1, adjust_contrast=0.5, filter_ths=0.003,
+                 text_threshold=0.7, low_text=0.4, link_threshold=0.4,
+                 canvas_size=2560, mag_ratio=1.,
+                 slope_ths=0.1, ycenter_ths=0.5, height_ths=0.5,
                  width_ths=0.5, add_margin=0.1):
         '''
         Parameters:
@@ -359,17 +358,17 @@ class Reader(object):
         '''
         img, img_cv_grey = reformat_input(image)
 
-        horizontal_list, free_list = self.detect(img, min_size, text_threshold, \
-                                                 low_text, link_threshold, \
-                                                 canvas_size, mag_ratio, \
-                                                 slope_ths, ycenter_ths, \
-                                                 height_ths, width_ths, \
+        horizontal_list, free_list = self.detect(img, min_size, text_threshold,
+                                                 low_text, link_threshold,
+                                                 canvas_size, mag_ratio,
+                                                 slope_ths, ycenter_ths,
+                                                 height_ths, width_ths,
                                                  add_margin, False)
 
-        result = self.recognize(img_cv_grey, horizontal_list, free_list, \
-                                decoder, beamWidth, batch_size, \
-                                workers, allowlist, blocklist, detail, rotation_info, \
-                                paragraph, contrast_ths, adjust_contrast, \
+        result = self.recognize(img_cv_grey, horizontal_list, free_list,
+                                decoder, beamWidth, batch_size,
+                                workers, allowlist, blocklist, detail, rotation_info,
+                                paragraph, contrast_ths, adjust_contrast,
                                 filter_ths, False)
 
         return result

@@ -381,7 +381,7 @@ class CTCLabelConverter(object):
 
                 for j, list_idx in enumerate(group):
                     matrix = mat[i, list_idx, :]
-                    t = ctcBeamSearch(matrix, self.character, self.ignore_idx, None, \
+                    t = ctcBeamSearch(matrix, self.character, self.ignore_idx, None,
                                       beamWidth=beamWidth, dict_list=self.dict_list)
                     if j == 0:
                         string += t

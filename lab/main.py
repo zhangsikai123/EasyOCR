@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 import cv2
 
@@ -53,7 +52,7 @@ def parse_args():
 
 
 def run():
-    confidence_threshold = 0.3
+    confidence_threshold = 0.1
 
     args = parse_args()
     reader = easyocr.Reader(lang_list=args.lang, gpu=args.gpu)
