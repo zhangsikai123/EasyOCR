@@ -1,10 +1,11 @@
+from collections import namedtuple
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.nn.init as init
 from torchvision import models
 from torchvision.models.vgg import model_urls
-from collections import namedtuple
+
 
 def init_weights(modules):
     for m in modules:
@@ -19,6 +20,7 @@ def init_weights(modules):
             m.weight.data.normal_(0, 0.01)
             m.bias.data.zero_()
 
+
 class vgg16_bn(torch.nn.Module):
     def __init__(self, pretrained=True, freeze=True):
         super(vgg16_bn, self).__init__()
@@ -29,20 +31,20 @@ class vgg16_bn(torch.nn.Module):
         self.slice3 = torch.nn.Sequential()
         self.slice4 = torch.nn.Sequential()
         self.slice5 = torch.nn.Sequential()
-        for x in range(12):         # conv2_2
+        for x in range(12):  # conv2_2
             self.slice1.add_module(str(x), vgg_pretrained_features[x])
-        for x in range(12, 19):         # conv3_3
+        for x in range(12, 19):  # conv3_3
             self.slice2.add_module(str(x), vgg_pretrained_features[x])
-        for x in range(19, 29):         # conv4_3
+        for x in range(19, 29):  # conv4_3
             self.slice3.add_module(str(x), vgg_pretrained_features[x])
-        for x in range(29, 39):         # conv5_3
+        for x in range(29, 39):  # conv5_3
             self.slice4.add_module(str(x), vgg_pretrained_features[x])
 
         # fc6, fc7 without atrous conv
         self.slice5 = torch.nn.Sequential(
-                nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
-                nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6),
-                nn.Conv2d(1024, 1024, kernel_size=1)
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6),
+            nn.Conv2d(1024, 1024, kernel_size=1)
         )
 
         if not pretrained:
@@ -51,11 +53,11 @@ class vgg16_bn(torch.nn.Module):
             init_weights(self.slice3.modules())
             init_weights(self.slice4.modules())
 
-        init_weights(self.slice5.modules())        # no pretrained model for fc6 and fc7
+        init_weights(self.slice5.modules())  # no pretrained model for fc6 and fc7
 
         if freeze:
-            for param in self.slice1.parameters():      # only first conv
-                param.requires_grad= False
+            for param in self.slice1.parameters():  # only first conv
+                param.requires_grad = False
 
     def forward(self, X):
         h = self.slice1(X)
@@ -71,6 +73,7 @@ class vgg16_bn(torch.nn.Module):
         vgg_outputs = namedtuple("VggOutputs", ['fc7', 'relu5_3', 'relu4_3', 'relu3_2', 'relu2_2'])
         out = vgg_outputs(h_fc7, h_relu5_3, h_relu4_3, h_relu3_2, h_relu2_2)
         return out
+
 
 class BidirectionalLSTM(nn.Module):
 
@@ -88,6 +91,7 @@ class BidirectionalLSTM(nn.Module):
         recurrent, _ = self.rnn(input)  # batch_size x T x input_size -> batch_size x T x (2*hidden_size)
         output = self.linear(recurrent)  # batch_size x T x output_size
         return output
+
 
 class VGG_FeatureExtractor(nn.Module):
 
@@ -113,6 +117,7 @@ class VGG_FeatureExtractor(nn.Module):
     def forward(self, input):
         return self.ConvNet(input)
 
+
 class ResNet_FeatureExtractor(nn.Module):
     """ FeatureExtractor of FAN (http://openaccess.thecvf.com/content_ICCV_2017/papers/Cheng_Focusing_Attention_Towards_ICCV_2017_paper.pdf) """
 
@@ -122,6 +127,7 @@ class ResNet_FeatureExtractor(nn.Module):
 
     def forward(self, input):
         return self.ConvNet(input)
+
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -158,6 +164,7 @@ class BasicBlock(nn.Module):
 
         return out
 
+
 class ResNet(nn.Module):
 
     def __init__(self, input_channel, output_channel, block, layers):
@@ -177,27 +184,27 @@ class ResNet(nn.Module):
         self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
         self.layer1 = self._make_layer(block, self.output_channel_block[0], layers[0])
         self.conv1 = nn.Conv2d(self.output_channel_block[0], self.output_channel_block[
-                               0], kernel_size=3, stride=1, padding=1, bias=False)
+            0], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.output_channel_block[0])
 
         self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
         self.layer2 = self._make_layer(block, self.output_channel_block[1], layers[1], stride=1)
         self.conv2 = nn.Conv2d(self.output_channel_block[1], self.output_channel_block[
-                               1], kernel_size=3, stride=1, padding=1, bias=False)
+            1], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(self.output_channel_block[1])
 
         self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1))
         self.layer3 = self._make_layer(block, self.output_channel_block[2], layers[2], stride=1)
         self.conv3 = nn.Conv2d(self.output_channel_block[2], self.output_channel_block[
-                               2], kernel_size=3, stride=1, padding=1, bias=False)
+            2], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(self.output_channel_block[2])
 
         self.layer4 = self._make_layer(block, self.output_channel_block[3], layers[3], stride=1)
         self.conv4_1 = nn.Conv2d(self.output_channel_block[3], self.output_channel_block[
-                                 3], kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False)
+            3], kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False)
         self.bn4_1 = nn.BatchNorm2d(self.output_channel_block[3])
         self.conv4_2 = nn.Conv2d(self.output_channel_block[3], self.output_channel_block[
-                                 3], kernel_size=2, stride=1, padding=0, bias=False)
+            3], kernel_size=2, stride=1, padding=0, bias=False)
         self.bn4_2 = nn.BatchNorm2d(self.output_channel_block[3])
 
     def _make_layer(self, block, planes, blocks, stride=1):
